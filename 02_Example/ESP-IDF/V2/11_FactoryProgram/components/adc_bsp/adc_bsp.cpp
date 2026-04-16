@@ -34,18 +34,14 @@ float adc_bsp::get_vbatVoltage()
     return VbatVoltage;
 }
 
-/*4.12V满电 3*/
-uint8_t adc_bsp::get_Batterylevel() 
-{
+uint8_t adc_bsp::get_Batterylevel() {
+    const float VOLT_FULL = 4.12f;  
+    const float VOLT_EMPTY = 3.0f;  
+    
     float vol = get_vbatVoltage();
-    if(vol < 3.0)
-    {
-        return 0;
-    }
-    if(vol > 4.12)
-    {
-        return 100;
-    }
-    float level = (vol / 4.12) * 100;
-    return (uint8_t)level;
+    
+    if (vol <= VOLT_EMPTY) return 0;
+    if (vol >= VOLT_FULL) return 100;
+
+    return (uint8_t)((vol - VOLT_EMPTY) / (VOLT_FULL - VOLT_EMPTY) * 100.0f);
 }
