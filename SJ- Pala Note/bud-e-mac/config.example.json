@@ -1,0 +1,24 @@
+{
+  "voice": "en-US-BrianNeural",
+  "port": 8765,
+  "claude_model": "claude-sonnet-4-6",
+  "groq_model": "whisper-large-v3-turbo",
+  "groq_key": "",
+  "anthropic_key": "",
+  "secrets_h": "../firmware 1.0/pala_note/secrets.h",
+  "calendar_window": "eventsToday+7",
+  "auto_migrate_days": 30,
+  "weather_location": "Chicago",
+  "sources": {
+    "calendar": true,
+    "weather": true,
+    "tasks": false
+  },
+  "nudges": true,
+  "nudge_lead_min": 15,
+  "nudge_target": "auto",
+  "productive_base": "https://api.productive.io/api/v2",
+  "productive_org": "",
+  "productive_person_id": "",
+  "productive_token": ""
+}
