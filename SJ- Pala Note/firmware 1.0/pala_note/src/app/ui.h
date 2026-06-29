@@ -34,6 +34,7 @@ void drawListMenuCard(int y, const char* title, const char* meta, bool active);
 
 // Screens
 void showIdle();
+void showIdleBlink();   // home screen with eyes closed (one frame of a blink)
 void showBatteryLow(int pct);
 void showRecording();
 void showSaved(int num);
@@ -53,3 +54,16 @@ void showTransferConnecting();
 void showTransferMode(const char* ip);
 void showSettings(int cursor);
 void showDeviceInfo();
+void showDeskMode(bool on);          // desk-mode toggle confirmation
+void showNudge(const char* text);    // proactive nudge banner + text
+
+// Timer / Pomodoro screens
+void showTimerSet(int presetIdx);                 // duration picker
+void showTimerRun(int remSec, int totalSec, bool paused);
+void showPomoRun(int remSec, int totalSec, bool isBreak, int block, bool paused);
+void showTimerDone(const char* big, const char* sub, bool love);
+
+// Bud-E ask (push-to-talk) screens
+void showAskThinking();               // Bud-E is working on it
+void showAskSpeaking(const char* reply);   // shows what Bud-E said while it speaks
+void showNoteReady();                 // "hold rec to record a note" (menu-launched)

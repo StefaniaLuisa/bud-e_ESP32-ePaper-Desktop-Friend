@@ -1,0 +1,26 @@
+# ─── macOS ───────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+
+# ─── Python ──────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+
+# ─── Arduino / ESP build artifacts ───────────────────────
+*.bin
+*.elf
+*.map
+build/
+
+# ─── Secrets (also covered by per-folder .gitignores) ────
+# Never commit real credentials. Templates/examples are fine.
+**/secrets.h
+SJ- Pala Note/bud-e-mac/config.json
+SJ- Pala Note/bud-e-mac/data/
+
+# ─── Third-party reference library ───────────────────────
+# RoboEyes by FluxGarage (GPL) — kept locally for reference only, NOT compiled
+# into the firmware. Excluded to keep this repo's licensing clean for open source.
+# Download separately if needed: https://github.com/FluxGarage/RoboEyes
+SJ- Pala Note/RoboEyes-main/

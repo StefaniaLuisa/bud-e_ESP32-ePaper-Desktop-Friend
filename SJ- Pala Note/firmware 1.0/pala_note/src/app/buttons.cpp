@@ -5,6 +5,7 @@
 #include "buttons.h"
 
 extern void startRecordFlow();
+extern void startAskFlow();
 extern void resetActivity();
 
 bool isDown(int pin) { return digitalRead(pin) == LOW; }
@@ -63,7 +64,7 @@ bool handleIdleRec() {
   while (isDown(BTN_REC) && millis()-t0 < REC_HOLD_MS) delay(5);
 
   if (isDown(BTN_REC)) {
-    startRecordFlow();
+    startAskFlow();          // hold REC on the home screen = talk to Bud-E
     return true;
   }
   return true;

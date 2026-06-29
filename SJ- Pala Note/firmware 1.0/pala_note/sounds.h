@@ -127,6 +127,33 @@ inline void soundSuccess() {
   soundDisable();
 }
 
+// Louder, more attention-grabbing chime for timer / pomodoro completion —
+// you may be across the room, so it runs at full volume and rings twice.
+inline void soundTimerDone() {
+  if (!palaSoundEnabled) return;
+  audio_playback_set_vol(100);                 // louder than the 75 used for UI clicks
+  for (int rep = 0; rep < 2; rep++) {
+    playToneUI(880.0f,  70, 0.24f);
+    delay(14);
+    playToneUI(1320.0f, 90, 0.22f);
+    delay(14);
+    playToneUI(1760.0f, 110, 0.18f);
+    delay(rep == 0 ? 120 : 0);
+  }
+  soundDisable();
+}
+
+// Friendly two-note rising chime to get your attention for a proactive nudge —
+// noticeable but gentler than the timer's double-ring alarm.
+inline void soundNudge() {
+  if (!palaSoundEnabled) return;
+  audio_playback_set_vol(90);
+  playToneUI(1046.0f, 60, 0.20f);   // C6
+  delay(20);
+  playToneUI(1568.0f, 90, 0.18f);   // G6
+  soundDisable();
+}
+
 inline void soundDelete() {
   if (!palaSoundEnabled) return;
   soundEnable();

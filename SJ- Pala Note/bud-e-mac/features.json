@@ -1,0 +1,132 @@
+{
+  "firmware": "v1.5",
+  "updated": "2026-06-28",
+  "intro": "Bud-E has two buttons — REC and PWR — that do everything on the device. This is the full gesture + feature reference. (Edit features.json to keep it current.)",
+  "sections": [
+    {
+      "icon": "🏠", "title": "Home screen",
+      "rows": [
+        {"do": "Hold REC", "result": "Talk to Bud-E (push-to-talk) — speak, release, he answers aloud"},
+        {"do": "Press PWR", "result": "Open the Menu"},
+        {"do": "Wait ~2 min idle", "result": "Sleeps — tired face, then sleepy screen + battery %"},
+        {"do": "(idle)", "result": "Bud-E blinks every few seconds"}
+      ]
+    },
+    {
+      "icon": "📂", "title": "Menu (press PWR from home)",
+      "note": "Items: Record · Notes · Tags · Timer · Pomodoro · Sync · Settings",
+      "rows": [
+        {"do": "PWR", "result": "Next item"},
+        {"do": "REC", "result": "Select the highlighted item"},
+        {"do": "Hold / double-tap REC", "result": "Back to home"}
+      ]
+    },
+    {
+      "icon": "🎙️", "title": "Talk to Bud-E",
+      "note": "Uses your calendar, weather, and Productive tasks. First ask shows a brief 'connecting'; follow-ups are quick.",
+      "rows": [
+        {"do": "Home → hold REC, speak, release", "result": "Records → thinking → speaks the answer + shows text → home"}
+      ]
+    },
+    {
+      "icon": "📝", "title": "Record a note (Menu → Record)",
+      "rows": [
+        {"do": "Hold REC, speak, release", "result": "Records the note"},
+        {"do": "PWR", "result": "Cycle the tag (Note / Work / Idea / Buy / Private)"},
+        {"do": "REC", "result": "Confirm tag → saved → returns home"},
+        {"do": "Later: Menu → Sync", "result": "Transcribes + adds title/summary/to-dos, and uploads to the dashboard"}
+      ]
+    },
+    {
+      "icon": "⏱️", "title": "Timer (Menu → Timer)",
+      "note": "1-min is a temporary test preset.",
+      "rows": [
+        {"do": "PWR", "result": "Cycle length (1 / 5 / 10 / 15 / 25 / 45 / 60 min)"},
+        {"do": "REC", "result": "Start"},
+        {"do": "PWR (running)", "result": "Pause / resume"},
+        {"do": "Hold / double-tap REC", "result": "Cancel"},
+        {"do": "Reaches 0", "result": "Loud chime + heart eyes → home"}
+      ]
+    },
+    {
+      "icon": "🍅", "title": "Pomodoro (Menu → Pomodoro)",
+      "rows": [
+        {"do": "Starts immediately", "result": "4 × (25 focus / 5 break) + a 15-min long break"},
+        {"do": "PWR", "result": "Pause / resume"},
+        {"do": "Hold / double-tap REC", "result": "Cancel the session"},
+        {"do": "Each phase ends", "result": "Chime + transition face, auto-advances"}
+      ]
+    },
+    {
+      "icon": "📒", "title": "Browse / play / delete notes (Menu → Notes)",
+      "rows": [
+        {"do": "PWR / double-tap PWR", "result": "Next note / previous note"},
+        {"do": "REC", "result": "Open the note"},
+        {"do": "In a note: REC", "result": "Play audio (REC again = stop)"},
+        {"do": "In a note: PWR", "result": "Next page / next note"},
+        {"do": "In a note: hold REC", "result": "Delete → REC confirms, PWR cancels"},
+        {"do": "Double-tap REC", "result": "Back"}
+      ]
+    },
+    {
+      "icon": "🏷️", "title": "Tags (Menu → Tags)",
+      "rows": [
+        {"do": "PWR, then REC", "result": "Cycle tags, then show only that tag's notes"}
+      ]
+    },
+    {
+      "icon": "⚙️", "title": "Settings on the device (Menu → Settings)",
+      "note": "Items: Sounds · Desk Mode · Transfer · Device",
+      "rows": [
+        {"do": "Sounds", "result": "REC toggles button sounds on/off"},
+        {"do": "Desk Mode", "result": "REC toggles always-on desk mode (stays awake + online for nudges — keep plugged in)"},
+        {"do": "Transfer", "result": "Starts the on-device web page (shows an IP to open on your WiFi)"},
+        {"do": "Device", "result": "Shows the firmware version + info"}
+      ]
+    },
+    {
+      "icon": "🔌", "title": "Desk mode (always-on nudges)",
+      "note": "Plug Bud-E into USB power, then Menu → Settings → Desk Mode → on. The setting sticks across reboots.",
+      "rows": [
+        {"do": "Turn on (plugged in)", "result": "Bud-E stays awake, holds WiFi, and checks the Mac for nudges every ~30s"},
+        {"do": "Meeting approaches", "result": "Face perks up + a chime + he speaks the heads-up aloud, then back to blinking"},
+        {"do": "Turn off", "result": "Drops WiFi and returns to normal battery behavior (sleeps after ~2 min idle)"},
+        {"do": "Battery critically low", "result": "Auto-sleeps to protect the cell even in desk mode (plug back in to resume)"}
+      ]
+    },
+    {
+      "icon": "😴", "title": "Sleep & wake",
+      "rows": [
+        {"do": "Tap REC or PWR", "result": "Wake to home"},
+        {"do": "Hold PWR while waking", "result": "Wake straight into the Menu"},
+        {"do": "Hold REC after waking (~⅓ s)", "result": "Talk to Bud-E"}
+      ]
+    },
+    {
+      "icon": "🔌", "title": "Flashing (download mode)",
+      "rows": [
+        {"do": "Hold REC (BOOT) → tap RESET → release REC", "result": "Enters download mode, then Upload in Arduino IDE"}
+      ]
+    },
+    {
+      "icon": "🧠", "title": "Mac brain & dashboard (always running)",
+      "rows": [
+        {"do": "Morning briefing", "result": "Auto at 8:00 AM (spoken on the Mac), or the 🌅 Briefing button (Conversations)"},
+        {"do": "End-of-day wrap-up", "result": "Auto at 5:30 PM (what's left today + a peek at tomorrow), or the 🌙 Wrap-up button"},
+        {"do": "Meeting nudges", "result": "Spoken heads-up ~15 min before a calendar event, and again as it starts (toggle + lead time in Settings)"},
+        {"do": "Where nudges play", "result": "Settings → 'Nudge plays on': Bud-E device (in desk mode), the Mac, or auto (device when it's online, else the Mac). 🔔 test button included"},
+        {"do": "Type to Bud-E", "result": "Conversations tab → type + Ask"},
+        {"do": "See your notes", "result": "Notes tab — search, filter by tag, play audio"},
+        {"do": "Move a note to dashboard-only", "result": "Notes tab dropdown → takes effect next Sync"},
+        {"do": "Change voice", "result": "Settings → pick voice → ▶ preview → Save"},
+        {"do": "Weather location / auto-move days / nudges", "result": "Settings"}
+      ]
+    },
+    {
+      "icon": "📡", "title": "What Bud-E knows",
+      "rows": [
+        {"do": "Calendar · Weather · Productive tasks", "result": "Used in every answer and the morning briefing"}
+      ]
+    }
+  ]
+}

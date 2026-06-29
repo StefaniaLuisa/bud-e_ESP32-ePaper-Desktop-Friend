@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "draw.h"
 #include "face.h"
+#include "timer.h"
 #include "notes.h"
 #include "battery.h"
 #include "rtc.h"
@@ -268,21 +269,19 @@ void drawListMenuCard(int y, const char* title, const char* meta, bool active) {
 void showIdle() {
   clearWhite();
 
-  // Bud-E's awake face
+  // Bud-E's awake face + just his name (no clock or battery here — kept clean).
   drawBudeEyes(MOOD_AWAKE);
+  drawStrC(100, 155, "bud-e", 1, BLACK);
 
-  // Name + clock under the eyes
-  drawStrC(100, 150, "bud-e", 1, BLACK);
-  String t = localClockHHMM();
-  drawStrC(100, 182, t.c_str(), 2, BLACK);
+  refresh();
+}
 
-  // Small battery % in the top-right corner
-  int batt = readBatteryPercent();
-  if (batt >= 0) {
-    char b[8]; snprintf(b, sizeof(b), "%d%%", batt);
-    drawStr(160, 18, b, 1, BLACK);
-  }
-
+// One frame of a blink: same home layout but with the eyes closed. The main
+// loop draws this, pauses briefly, then redraws showIdle() to "open" them.
+void showIdleBlink() {
+  clearWhite();
+  drawBudeEyes(MOOD_BLINK);
+  drawStrC(100, 155, "bud-e", 1, BLACK);
   refresh();
 }
 
@@ -337,14 +336,17 @@ void showMenu(int cursor) {
   clearWhite();
   drawStr(16, 14, "menu", 1, BLACK);
   hline(16, 32, W-32, BLACK);
-  const int y0 = 42, step = 36;
+  // Size the rows to the number of menu items so they always fit on screen.
+  const int y0 = 40;
+  const int step = (196 - y0) / MENU_COUNT;   // 26px for 6 items
+  const int ih   = step - 4;                  // row box height (gap between rows)
   for (int row = 0; row < MENU_COUNT; row++) {
     bool active = row == cursor;
     int y = y0 + row * step;
-    if (active) fillRoundRect(16, y, 168, 31, 8, BLACK);
-    else        strokeRoundRect(16, y, 168, 31, 8, 1, BLACK);
+    if (active) fillRoundRect(16, y, 168, ih, 8, BLACK);
+    else        strokeRoundRect(16, y, 168, ih, 8, 1, BLACK);
     uint8_t col = active ? WHITE : BLACK;
-    drawStrInBox(16, y, 168, 31, MENU_ITEMS[row], 1, col);
+    drawStrInBox(16, y, 168, ih, MENU_ITEMS[row], 1, col);
   }
   refresh();
 }
@@ -495,16 +497,23 @@ void showDone() {
 
 void showError(const char* msg) {
   clearWhite();
-  iconError(100, 70);
-  if (msg && strlen(msg) > 0) drawStrC(100, 118, msg, 1, BLACK);
-  else drawStrC(100, 118, "error", 1, BLACK);
+  // Bud-E reacts to trouble with an annoyed face, message underneath.
+  drawBudeEyes(MOOD_ANGRY);
+  drawStrC(100, 150, (msg && strlen(msg) > 0) ? msg : "error", 1, BLACK);
   refresh();
 }
 
 void showUltraSleepScreen() {
   clearWhite();
   drawBudeEyes(MOOD_SLEEPY);
-  drawStrC(100, 165, "zzz", 1, BLACK);
+  drawStrC(100, 150, "zzz", 1, BLACK);
+
+  // Battery % lives here (shown while sleeping), not on the home screen.
+  int batt = readBatteryPercent();
+  if (batt >= 0) {
+    char b[8]; snprintf(b, sizeof(b), "%d%%", batt);
+    drawStrC(100, 178, b, 1, BLACK);
+  }
   refresh();
 }
 
@@ -538,22 +547,47 @@ void showSettings(int cursor) {
   clearWhite();
   drawStr(16, 14, "settings", 1, BLACK);
   hline(16, 32, W-32, BLACK);
-  const int y0 = 46, step = 44;
+  const int y0 = 42, step = 39, boxH = 34;   // 4 rows now (Sounds·Desk·Transfer·Device)
   for (int row = 0; row < SETTINGS_COUNT; row++) {
     bool active = row == cursor;
     int y = y0 + row * step;
-    if (active) fillRoundRect(16, y, 168, 36, 8, BLACK);
-    else        strokeRoundRect(16, y, 168, 36, 8, 1, BLACK);
+    if (active) fillRoundRect(16, y, 168, boxH, 8, BLACK);
+    else        strokeRoundRect(16, y, 168, boxH, 8, 1, BLACK);
     uint8_t col = active ? WHITE : BLACK;
     if (row == 0) {
       drawStr(28, y + 8, "sounds", 1, col);
       drawStr(W - 70, y + 8, palaSoundIsEnabled() ? "on" : "off", 1, col);
     } else if (row == 1) {
+      drawStr(28, y + 8, "desk mode", 1, col);
+      drawStr(W - 70, y + 8, deskMode ? "on" : "off", 1, col);
+    } else if (row == 2) {
       drawStr(28, y + 8, "transfer", 1, col);
     } else {
       drawStr(28, y + 8, "device", 1, col);
     }
   }
+  refresh();
+}
+
+// Brief confirmation when toggling desk mode from Settings.
+void showDeskMode(bool on) {
+  clearWhite();
+  drawBudeEyes(on ? MOOD_AWAKE : MOOD_SLEEPY);
+  drawStrC(100, 150, on ? "desk mode on" : "desk mode off", 1, BLACK);
+  drawStrC(100, 172, on ? "staying awake for you" : "back to normal", 1, BLACK);
+  refresh();
+}
+
+// A proactive nudge from the Mac (meeting heads-up, etc.) — a clear banner over
+// the wrapped nudge text, shown while Bud-E speaks it aloud.
+void showNudge(const char* text) {
+  clearWhite();
+  drawStrC(100, 14, "heads up", 1, BLACK);
+  hline(16, 28, W - 32, BLACK);
+  if (text && text[0])
+    drawWrappedText(12, 44, W - 24, 20, 7, String(text), BLACK, 0);
+  else
+    drawStrC(100, 100, "(nudge)", 1, BLACK);
   refresh();
 }
 
@@ -568,6 +602,117 @@ void showDeviceInfo() {
   char b[24]; snprintf(b, sizeof(b), "%d notes", (int)noteIndex.size());
   drawStr(18, 138, b, 1, BLACK);
   drawStr(18, 160, palaSoundIsEnabled() ? "sounds on" : "sounds off", 1, BLACK);
-  drawStr(18, 178, rtcUtcIso().length() ? "rtc set" : "rtc not set", 1, BLACK);
+  drawStr(18, 178, deskMode ? "desk mode on" : "desk mode off", 1, BLACK);
+  refresh();
+}
+
+// ─── Timer / Pomodoro ───────────────────────────────────────────────────────
+// Compact Bud-E eyes for the timer screens (the full face is too tall to sit
+// above a big countdown). Same rounded-square style as the real eyes.
+static void drawMiniEyes(int cx, int cy, bool happy) {
+  const int ew = 22, eh = 28, er = 8, gap = 18;
+  int lx = cx - gap / 2 - ew;
+  int rx = cx + gap / 2;
+  fillRoundRect(lx, cy, ew, eh, er, BLACK);
+  fillRoundRect(rx, cy, ew, eh, er, BLACK);
+  if (happy) {
+    // Carve the top into smiling crescents.
+    fillCircle(lx + ew / 2, cy - 5, ew, WHITE);
+    fillCircle(rx + ew / 2, cy - 5, ew, WHITE);
+  }
+}
+
+// Big remaining-time readout. To spare the e-paper, above 60s we show whole
+// minutes (rounded up) and only redraw when that number changes; under 60s we
+// show seconds, counting down each second.
+static void drawCountdownBig(int cx, int y, int h, int remSec) {
+  char buf[8];
+  const char* unit;
+  if (remSec > 60) { snprintf(buf, sizeof(buf), "%d", (remSec + 59) / 60); unit = "MIN"; }
+  else             { snprintf(buf, sizeof(buf), "%d", remSec);             unit = "SEC"; }
+  drawBigStrC(cx, y, h, buf, BLACK);
+  drawStrC(cx, y + h + 12, unit, 1, BLACK);
+}
+
+static void drawProgress(int totalSec, int remSec) {
+  const int bx = 34, bw = 132, by = 150, bh = 12;
+  strokeRoundRect(bx, by, bw, bh, 4, 1, BLACK);
+  if (totalSec > 0) {
+    long done = (long)(totalSec - remSec);
+    int fill = (int)(done * (bw - 4) / totalSec);
+    if (fill < 0) fill = 0;
+    if (fill > bw - 4) fill = bw - 4;
+    if (fill > 0) fillRoundRect(bx + 2, by + 2, fill, bh - 4, 2, BLACK);
+  }
+}
+
+// Shared run-screen layout for both the simple timer and pomodoro.
+// No face here — just the header, a big centered countdown, and a progress bar
+// (the eyes were a distraction mid-countdown).
+static void drawRunScreen(const char* header, int remSec, int totalSec,
+                          const char* footer, bool paused) {
+  clearWhite();
+  drawStrC(100, 18, header, 1, BLACK);
+  drawCountdownBig(100, 62, 60, remSec);
+  drawProgress(totalSec, remSec);
+  drawStrC(100, 182, paused ? "paused — pwr resumes" : footer, 1, BLACK);
+  refresh();
+}
+
+void showTimerSet(int presetIdx) {
+  presetIdx = constrain(presetIdx, 0, TIMER_PRESET_COUNT - 1);
+  clearWhite();
+  drawStrC(100, 10, "set timer", 1, BLACK);
+  drawMiniEyes(100, 30, false);
+  char buf[8]; snprintf(buf, sizeof(buf), "%d", TIMER_PRESETS[presetIdx]);
+  drawBigStrC(100, 70, 50, buf, BLACK);
+  drawStrC(100, 132, "MIN", 1, BLACK);
+  drawStrC(100, 182, "pwr: change  rec: start", 1, BLACK);
+  refresh();
+}
+
+void showTimerRun(int remSec, int totalSec, bool paused) {
+  drawRunScreen("timer", remSec, totalSec, "hold rec to cancel", paused);
+}
+
+void showPomoRun(int remSec, int totalSec, bool isBreak, int block, bool paused) {
+  char header[20];
+  snprintf(header, sizeof(header), "%s  %d/%d",
+           isBreak ? "break" : "focus", block, POMO_BLOCKS);
+  drawRunScreen(header, remSec, totalSec, "hold rec to cancel", paused);
+}
+
+void showTimerDone(const char* big, const char* sub, bool love) {
+  clearWhite();
+  drawBudeEyes(love ? MOOD_LOVE : MOOD_HAPPY);
+  drawStrC(100, 150, big, 2, BLACK);
+  if (sub && sub[0]) drawStrC(100, 178, sub, 1, BLACK);
+  refresh();
+}
+
+// ─── Bud-E ask (push-to-talk) ───────────────────────────────────────────────
+void showNoteReady() {
+  clearWhite();
+  drawBudeEyes(MOOD_AWAKE);
+  drawStrC(100, 150, "hold rec to record", 1, BLACK);
+  drawStrC(100, 172, "pwr: back", 1, BLACK);
+  refresh();
+}
+
+void showAskThinking() {
+  clearWhite();
+  drawBudeEyes(MOOD_THINKING);
+  drawStrC(100, 150, "thinking...", 1, BLACK);
+  refresh();
+}
+
+void showAskSpeaking(const char* reply) {
+  clearWhite();
+  drawStrC(100, 14, "bud-e", 1, BLACK);
+  hline(16, 28, W - 32, BLACK);
+  if (reply && reply[0])
+    drawWrappedText(12, 44, W - 24, 20, 7, String(reply), BLACK, 0);
+  else
+    drawStrC(100, 100, "(speaking)", 1, BLACK);
   refresh();
 }

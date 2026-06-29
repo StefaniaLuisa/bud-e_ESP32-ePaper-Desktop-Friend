@@ -4,6 +4,7 @@
 #include "../../types.h"
 #include "sleep.h"
 #include "ui.h"
+#include "face.h"
 #include "network.h"
 #include "../../sounds.h"
 #include "WiFi.h"
@@ -17,6 +18,10 @@ void resetActivity() {
 }
 
 void enterUltraSleep() {
+  // A brief "winding down" tired face before Bud-E dozes off.
+  drawBudeFace(MOOD_TIRED);
+  delay(650);
+
   showUltraSleepScreen();
   delay(120);
 

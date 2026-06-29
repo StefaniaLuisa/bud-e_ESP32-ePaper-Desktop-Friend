@@ -64,7 +64,7 @@ void updateIndexHasText(int num) {
 }
 
 void deleteNote(int num) {
-  const char* exts[] = {"wav", "txt", "meta", "ai", nullptr};
+  const char* exts[] = {"wav", "txt", "meta", "ai", "up", nullptr};
   char path[64];
   for (int e = 0; exts[e]; e++) {
     snprintf(path, sizeof(path), "%s/note_%03d.%s", NOTES_DIR, num, exts[e]);

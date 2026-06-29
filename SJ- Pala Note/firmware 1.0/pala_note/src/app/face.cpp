@@ -87,6 +87,27 @@ void drawBudeEyes(BudeMood mood) {
       heart(RIGHT_X + EYE_W / 2, cy, 26);
       break;
     }
+
+    case MOOD_TIRED: {
+      // RoboEyes "tired": open eyes, then droop the OUTER top corners with
+      // background-colored triangles.
+      eye(LEFT_X,  EYE_TOP, EYE_W, EYE_H, EYE_R);
+      eye(RIGHT_X, EYE_TOP, EYE_W, EYE_H, EYE_R);
+      int lid = EYE_H / 2;
+      fillTriangle(LEFT_X,  EYE_TOP - 1, LEFT_X  + EYE_W, EYE_TOP - 1, LEFT_X,          EYE_TOP + lid - 1, BG);
+      fillTriangle(RIGHT_X, EYE_TOP - 1, RIGHT_X + EYE_W, EYE_TOP - 1, RIGHT_X + EYE_W, EYE_TOP + lid - 1, BG);
+      break;
+    }
+
+    case MOOD_ANGRY: {
+      // RoboEyes "angry": open eyes, then droop the INNER top corners.
+      eye(LEFT_X,  EYE_TOP, EYE_W, EYE_H, EYE_R);
+      eye(RIGHT_X, EYE_TOP, EYE_W, EYE_H, EYE_R);
+      int lid = EYE_H / 2;
+      fillTriangle(LEFT_X,  EYE_TOP - 1, LEFT_X  + EYE_W, EYE_TOP - 1, LEFT_X  + EYE_W, EYE_TOP + lid - 1, BG);
+      fillTriangle(RIGHT_X, EYE_TOP - 1, RIGHT_X + EYE_W, EYE_TOP - 1, RIGHT_X,         EYE_TOP + lid - 1, BG);
+      break;
+    }
   }
 }
 

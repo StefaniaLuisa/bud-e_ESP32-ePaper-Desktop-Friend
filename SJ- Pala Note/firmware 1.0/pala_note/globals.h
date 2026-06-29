@@ -21,6 +21,11 @@ extern bool      wokeFromUltraSleep;
 extern bool      wakeToMenuRequested;
 extern bool      wakeToRecRequested;
 
+// Desk mode: plugged-in "always on" — stays awake, holds WiFi, polls for nudges.
+extern bool      deskMode;
+extern uint32_t  lastNudgePollMs;
+extern uint32_t  lastWifiCheckMs;
+
 extern uint32_t  tickerLastMs;
 extern int       tickerOffset;
 extern int       tickerCursor;

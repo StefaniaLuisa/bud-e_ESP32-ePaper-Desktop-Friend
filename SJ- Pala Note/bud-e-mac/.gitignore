@@ -1,0 +1,5 @@
+# Private — contains API tokens (Productive, etc.)
+config.json
+
+# Local note archive + conversation history
+data/

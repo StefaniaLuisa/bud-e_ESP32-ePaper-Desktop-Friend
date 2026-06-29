@@ -12,9 +12,9 @@ extern "C" {
 #include "../../src/audio/audio_bsp.h"
 }
 
-bool record() {
-  int num = nextNoteNumber();
-  char path[64]; snprintf(path, sizeof(path), "%s/note_%03d.wav", NOTES_DIR, num);
+// Record from the mic into a 16 kHz mono WAV at `path` while REC is held
+// (minimum ~500 ms). Shared by note recording and Bud-E "ask" mode.
+static bool recordWavTo(const char* path) {
   Serial.printf("[Rec] %s\n", path);
 
   File f = SD_MMC.open(path, FILE_WRITE);
@@ -54,9 +54,22 @@ bool record() {
   f.write((uint8_t*)"data",4); f.write((uint8_t*)&dB,4);
   f.close();
 
-  lastRecNum = num;
   Serial.printf("[Rec] done: %lu bytes\n", (unsigned long)totalMono);
   return totalMono > 1000;
+}
+
+// Record a note: pick the next number, record, remember it.
+bool record() {
+  int num = nextNoteNumber();
+  char path[64]; snprintf(path, sizeof(path), "%s/note_%03d.wav", NOTES_DIR, num);
+  bool ok = recordWavTo(path);
+  if (ok) lastRecNum = num;
+  return ok;
+}
+
+// Record a throwaway clip for Bud-E "ask" mode (uploaded, then overwritten).
+bool recordAsk(const char* path) {
+  return recordWavTo(path);
 }
 
 bool playWavFile(const char* path) {

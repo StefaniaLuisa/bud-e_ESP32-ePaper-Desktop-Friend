@@ -68,16 +68,32 @@
 #define DOUBLE_MS           200
 #define ULTRA_SLEEP_MS      120000UL
 #define TICKER_INTERVAL_MS  950
+#define IDLE_BLINK_MS       5000     // how often Bud-E blinks on the home screen (0 = never)
+#define DESK_BLINK_MS       25000UL  // slower blink in desk mode (spare the e-paper over long sessions)
+
+/* Desk mode (Phase 2): plugged-in "always on" mode. Bud-E stays awake, holds
+ * WiFi, and polls the Mac brain for proactive nudges (meeting heads-up, etc.). */
+#define NUDGE_POLL_MS       30000UL  // how often to ask the Mac "anything for me?"
+#define DESK_WIFI_CHECK_MS  15000UL  // how often to verify/reconnect WiFi in desk mode
+#define NUDGE_WAV_PATH      "/nudge.wav"   // temp download for a nudge's spoken audio
 
 /* Battery warning */
 #define BAT_CHECK_INTERVAL_MS  30000
 #define BAT_LOW_THRESHOLD      15
 #define BAT_RECOVER_THRESHOLD  20
+#define BAT_CRITICAL_THRESHOLD 5    // desk mode force-sleeps below this to protect the cell
 
 /* Time & firmware */
-#define LOCAL_TIME_OFFSET_MIN  120   // UTC+2 (Germany summer). Set to your offset.
-#define FIRMWARE_VERSION       "v1.1"
-#define FW_VERSION             "v1.1"
+#define LOCAL_TIME_OFFSET_MIN  (-300)   // UTC-5 = Chicago Central Daylight Time (summer).
+                                        // Fixed offset (no auto-DST): in winter (CST) change to -360.
+// Bump this every flash so the device + Serial banner report what's on it.
+// v1.5 = Desk mode (plugged-in always-on): stays awake, holds WiFi, polls the
+//        Mac for proactive meeting nudges (face + chime + spoken). Settings →
+//        Desk Mode toggle. (Bump to v1.6 on the next flash.)
+// v1.4 = Bud-E: RoboEyes face + blink, Timer/Pomodoro, push-to-talk ask,
+//        notes→dashboard sync, retention.
+#define FIRMWARE_VERSION       "v1.5"
+#define FW_VERSION             "v1.5"
 
 /* ─── Cloud AI services ─────────────────────────────────────────────────────
  * Speech-to-text is done by Groq (OpenAI-compatible Whisper endpoint).
@@ -95,5 +111,14 @@
 #define CLAUDE_MODEL    "claude-haiku-4-5"   // cheap + fast; great for this job
 #define CLAUDE_VERSION  "2023-06-01"
 #define CLAUDE_MAXTOK   1024
+
+/* ─── Bud-E brain (Phase 2: push-to-talk) ───────────────────────────────────
+ * The Mac runs bud_e_server.py; the device POSTs recorded audio to it over the
+ * LAN and plays back the spoken reply. Set BUDE_HOST to your Mac's LAN IP
+ * (bud_e_server.py prints it on startup). Device + Mac must share WiFi. */
+#define BUDE_HOST       "192.168.1.130"   // <-- your Mac's LAN IP
+#define BUDE_PORT       8765
+#define ASK_WAV_PATH    "/ask.wav"        // temp upload (the question)
+#define REPLY_WAV_PATH  "/reply.wav"      // temp download (Bud-E's spoken answer)
 
 #endif // CONFIG_H

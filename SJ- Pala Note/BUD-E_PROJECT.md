@@ -126,16 +126,29 @@ expressions **snap to a new mood on events** rather than animate continuously. C
 refresh, ghosts less, sips less battery).
 
 ### The face module (`src/app/face.cpp` / `face.h`)
-A self-contained module with **7 moods**:
+A self-contained module with **9 moods**, drawn in the **FluxGarage RoboEyes** style
+(rounded-rect eyes + triangular/curved eyelid overlays — the repo lives at
+`SJ- Pala Note/RoboEyes-main/`; we ported its *expressions*, not its OLED animation engine):
 
 ```
-   AWAKE      BLINK      HAPPY      SLEEPY     LISTENING   THINKING    LOVE
-  rounded   squashed   bottom-    low slits   big & tall   glance up   hearts
-   rects      bars      curved                  alert
+   AWAKE      BLINK      HAPPY      SLEEPY     LISTENING   THINKING    LOVE     TIRED      ANGRY
+  rounded   squashed   bottom-    low slits   big & tall   glance up   hearts   outer     inner
+   rects      bars      curved                  alert                          lids droop lids droop
 ```
 
-- `drawBudeEyes()` — draws just the eyes (so they compose with name/clock/battery)
+- `drawBudeEyes()` — draws just the eyes (so they compose with a name, etc.)
 - `drawBudeFace()` — the standalone full-face version
+
+**Mood triggers (where each emotion shows):** awake = home · listening = recording ·
+thinking = working · love/happy = pomodoro completion · sleepy = sleep screen ·
+**tired = a brief beat as Bud-E falls asleep** (`enterUltraSleep()`) ·
+**angry = error screens** (NO WIFI / SD ERR / REC FAIL, via `showError()`).
+
+**Blinking (feels alive):** on the home screen Bud-E blinks every `IDLE_BLINK_MS` (5 s,
+in `config.h`; 0 disables) — `showIdleBlink()` draws closed eyes, then `showIdle()` reopens
+them. On e-paper this is a deliberate **slow wink**, not an OLED-fast blink (accepted limit).
+It only blinks once you've settled on the screen, and the device still sleeps normally after
+2 min of real inactivity.
 
 **Eye geometry** lives as one-line constants at the top of `face.cpp`, so tuning is trivial:
 
@@ -148,29 +161,78 @@ EYE_TOP = 60   // y of the eye top
 ```
 
 ### Where Bud-E appears (`ui.cpp`)
-| Screen | Before | Now |
-|--------|--------|-----|
-| **Home** (idle) | "Pala" wordmark + battery ring | Bud-E **awake eyes** + name + **clock (HH:MM)** + battery % |
-| **Sleep** (the full-screen "big logo" moment) | Plain logo | **Sleepy Bud-E** — half-closed eyes + "zzz" |
-| **Recording** | A white dot | **Bud-E listening** — big alert eyes + rec dot |
+| Screen | What it shows |
+|--------|--------------|
+| **Home** (idle) | Bud-E's **awake eyes + "bud-e"** only — *blinks periodically*. (Clock & battery removed per Stef's request — kept clean.) |
+| **Sleep** | **Sleepy Bud-E** (half-closed eyes) + "zzz" + the **battery %** (battery lives here now, not on home). |
+| **Recording** | **Bud-E listening** — big alert eyes + rec dot |
 
-Also added `localClockHHMM()` — reads the RTC and shows local time (or `--:--` until a
-Sync has set the clock). **Note logic (record/sync/notes) was not touched.**
+> **Timezone:** `LOCAL_TIME_OFFSET_MIN` is set to **−300 (Central Daylight, Chicago)**.
+> It's a fixed offset (no auto-DST) — switch to `-360` in winter (CST). Re-Sync after
+> flashing so the RTC re-reads NTP. The on-device clock isn't shown on a screen right now
+> (home is name-only); the offset still drives correct **note timestamps** in the web portal.
+> `localClockHHMM()` remains available if we want to put a clock back (e.g. on the sleep screen).
 
-> **Clock caveat:** it shows the time when you land on the home screen but doesn't *tick*
-> live yet, because the device deep-sleeps after ~2 minutes to save battery. A live clock
-> only matters once Bud-E is a plugged-in, always-on desk buddy (a Phase-2 "desk mode").
+---
+
+## 5b. Timer & Pomodoro (built — Phase 1)
+
+Two new menu entries: **Timer** and **Pomodoro**. While either runs, the device
+**stays awake** showing a big **centered countdown** (no eyes mid-countdown — they were
+a distraction). To spare the e-paper, the countdown shows **whole minutes (rounded up)**
+and only redraws when that number changes; in the **final minute** it switches to
+**seconds**, ticking each second. A progress bar fills as time elapses.
+
+**Menu is now:** `Notes · Tags · Timer · Pomodoro · Sync · Settings`
+
+### Timer
+- Menu → **Timer** opens a duration picker. **PWR** cycles presets
+  (**1\* / 5 / 10 / 15 / 25 / 45 / 60 min**), **REC** starts it. Default is 25 min.
+  - \* The **1-min** preset is a **temporary test preset** (marked `// TEMP` in `timer.cpp`) —
+    remove it once testing is done.
+- While running: **PWR** = pause/resume, **hold REC** (long-press) or **double-tap REC** = cancel.
+- When it finishes: a **loud chime** (`soundTimerDone()` — full volume, rings twice) +
+  Bud-E's **heart eyes** + "time's up", then back to home.
+
+### Pomodoro
+- Menu → **Pomodoro** starts immediately: **4 blocks** of **25 min focus / 5 min break**,
+  with a **15 min long break** after the 4th focus block (classic pomodoro).
+- The screen header shows the phase + block, e.g. `focus 1/4` → `break 1/4` → `focus 2/4` …
+- At each phase change: a **loud chime** + a transition face ("break!" / "focus!" /
+  "long break"), then it auto-advances. After the long break it shows "done!" and returns home.
+- Full session ≈ **130 min** (4×25 focus + 3×5 short breaks + 1×15 long break).
+- **PWR** = pause/resume, **hold/double-tap REC** = cancel the whole session.
+
+**Behaviour notes & honest limits**
+- *Battery:* staying awake for a 25-min pomodoro uses real power — best on a desk or
+  plugged in (this was the chosen trade-off for a live countdown).
+- *Accuracy:* timing uses the awake `millis()` clock; the brief celebration screens are
+  shown **before** the next phase starts, so a break/focus isn't shortened by them.
+- *Pomodoro length:* classic 4×(25 focus / 5 break) + a 15-min long break after the
+  4th block. All durations are `POMO_*` constants in `timer.h`.
+- *Voice control* ("start a 10-minute timer") is **Phase 2** — for now it's button-driven.
+
+**Code:** new `src/app/timer.cpp` / `timer.h` (state + logic); new screens in `ui.cpp`
+(`showTimerSet`, `showTimerRun`, `showPomoRun`, `showTimerDone`); new states
+`STATE_TIMER_SET / STATE_TIMER_RUN / STATE_POMO_RUN` and menu wiring in `pala_note.ino`.
+The main loop's auto-sleep is suppressed while a timer runs.
 
 ---
 
 ## 6. How to use the device today
 
-Two buttons: **REC** (record / select / play) and **PWR** (next / navigate).
+Two buttons: **REC** (talk / select / play) and **PWR** (next / navigate).
 
-### Record
-1. Home screen → **press and hold REC**, speak, **release to stop** (~½ s minimum).
-2. **Pick a tag:** tap **PWR** to cycle (Note, Work, Idea, Buy, Private), tap **REC** to confirm.
-3. The full-screen Bud-E logo/sleepy face = **"saved, going to sleep."** Press **REC** to wake.
+### Talk to Bud-E (primary gesture)
+1. Home screen → **press and hold REC**, ask your question, **release**.
+2. Bud-E thinks, then **speaks the answer** (and shows the text). Hold REC again to ask more.
+
+### Record a note
+1. **Menu (PWR) → Record** → the screen says "hold rec to record".
+2. **Hold REC**, speak, **release** (~½ s minimum).
+3. **Pick a tag:** tap **PWR** to cycle (Note, Work, Idea, Buy, Private), tap **REC** to confirm.
+4. After saving, Bud-E returns to the **home screen** (blinking eyes) — it no longer sleeps
+   instantly; it sleeps on the normal ~2-minute idle timeout.
 
 > Recording only saves **audio**. Text + Claude smarts appear **only after Menu → Sync** (needs WiFi).
 
@@ -261,9 +323,29 @@ activity "state" word to an ESP `/state` endpoint to drive a face — it needs a
 | Phase | Scope | Status |
 |-------|-------|--------|
 | **0** | Groq + Claude voice-note pipeline | ✅ Built & working |
-| **1** | On-device buddy: **face (done)**, clock, **timer**, **pomodoro** — no Mac needed | 🔨 Face done; timers next |
-| **2** | Mac brain: voice Q&A ("how's my day"), data integrations, scheduled check-ins, device speaks Mac-generated TTS, face reacts to activity | 📋 Designed, not built |
+| **1** | On-device buddy: **face**, clock, **timer**, **pomodoro** — no Mac needed | ✅ Built (pending hardware test) |
+| **2 MVP** | **Push-to-talk** → Mac brain → **Calendar "how's my day"** → spoken reply | ✅ Built (Mac side tested; device side pending flash) |
+| **2+** | More integrations (Productive, Gmail, Slack, iMessage), scheduled check-ins, wake word | 📋 Next |
 | **3** | Stretch: caller ID, voicemail-aloud | 💭 Maybe |
+
+### Phase 2 MVP — how it works (built 2026-06-25)
+From the home screen, **hold REC to talk to Bud-E** (push-to-talk is now the primary
+gesture). The device records your question, POSTs the WAV to the Mac brain
+(`bud-e-mac/bud_e_server.py`) at `BUDE_HOST:8765/ask`, which runs **Groq STT → your
+calendar (icalBuddy) → Claude → macOS `say` TTS** and returns a spoken WAV the device
+plays, then returns home. WiFi connects on demand and stays up for fast follow-ups.
+
+> **Gesture model (changed 2026-06-25):** home **hold REC = talk to Bud-E**.
+> Recording a **note** moved to **Menu → Record → hold REC**. Menu is now
+> `Record · Notes · Tags · Timer · Pomodoro · Sync · Settings`.
+- **Mac side** (`bud-e-mac/`): zero-pip Python; calendar via `icalBuddy` (no Google
+  OAuth); keys read from `secrets.h`; voice configurable in `config.json`. **Tested
+  end-to-end via `--text` mode.**
+- **Device side:** `src/app/ask.cpp` (HTTP upload/download), `recordAsk()`, new
+  `STATE_ASK` + "Ask" menu item, screens `showAskReady/Thinking/Speaking`. Reply WAV
+  is repackaged to a clean 44-byte header so the device plays it correctly.
+- **Setup:** set `BUDE_HOST` in `config.h` to the Mac's LAN IP (currently
+  `192.168.1.130`); run `python3 bud_e_server.py --serve`; device + Mac on same WiFi.
 
 Possible small hardware add later: a **vibration motor** for gentle haptic nudges.
 
@@ -290,11 +372,16 @@ warning, the two buttons, WiFi, power-rail gating, deep-sleep/wake.
 
 ## 11. Immediate next step
 
-Bud-E's eye **geometry hasn't been seen on real hardware yet**. Flash the current firmware,
-look at the Home / Sleep / Recording screens, and decide if the eyes should be
-**bigger / rounder / closer** (one-line constant tweaks in `face.cpp`). After that, the
-planned next build is the **timer + pomodoro** (happy/love face + chime when done) to
-complete Phase 1.
+**Flash and test on hardware.** Two things to eyeball on the real screen:
+1. **Bud-E's eye geometry** (Home / Sleep / Recording) — bigger / rounder / closer?
+   One-line constants in `face.cpp` (`EYE_W/H/R/GAP/TOP`).
+2. **The new Timer & Pomodoro screens** — countdown readability, mini-eye size, progress
+   bar, and the focus→break transitions. Tune in `ui.cpp` (`drawMiniEyes`,
+   `drawCountdownBig`) and `timer.h` (`POMO_*`, `TIMER_PRESETS`).
+
+After hardware tuning, Phase 1 is complete and the next build is **Phase 2** (the Mac
+backend: voice Q&A + data integrations). A small Phase-1.5 option is **voice-started
+timers**, but that depends on the Phase-2 voice pipeline.
 
 ---
 
@@ -305,16 +392,24 @@ SJ- Pala Note/
 ├─ BUD-E_PROJECT.md            ← this document
 ├─ PALA_NOTE_USER_GUIDE.md     ← plain-language how-to-use manual
 ├─ START HERE.pdf              ← creator's pointer to the Craft assembly guide
+├─ RoboEyes-main/              ← FluxGarage RoboEyes reference repo (style source; not compiled in)
+├─ bud-e-mac/                  ← Phase 2 Mac brain  [NEW]
+│  ├─ bud_e_server.py          ← zero-pip service: STT→calendar→Claude→say TTS; --serve / --text / --audio
+│  ├─ config.json              ← voice, port, models (keys fall back to secrets.h)
+│  └─ README.md
 └─ firmware 1.0/pala_note/
-   ├─ pala_note.ino            ← main sketch
+   ├─ pala_note.ino            ← main sketch (state machine, idle blink, timer + ask handlers)
    ├─ secrets.h                ← GROQ_KEY, ANTHROPIC_KEY, WiFi (keep private)
-   ├─ config.h                 ← cloud macros (Groq/Claude), version v1.1
+   ├─ config.h                 ← cloud macros, BUDE_HOST, timezone, IDLE_BLINK_MS, v1.1
+   ├─ sounds.h                 ← UI tones incl. soundTimerDone() (loud completion chime)
    ├─ globals.h / types.h
    └─ src/app/
       ├─ network.cpp/.h        ← Groq transcription + Claude enrichment + web portal
       ├─ notes.cpp/.h          ← note storage incl. .ai sidecar
-      ├─ face.cpp/.h           ← Bud-E's EMO-style eyes (7 moods)  [NEW]
-      ├─ ui.cpp/.h             ← screens (home/sleep/recording show Bud-E)
+      ├─ face.cpp/.h           ← Bud-E's eyes — RoboEyes-style, 9 moods + blink  [NEW]
+      ├─ timer.cpp/.h          ← Timer + Pomodoro state & logic    [NEW]
+      ├─ ask.cpp/.h            ← Phase 2 push-to-talk: upload WAV to Mac, play reply  [NEW]
+      ├─ ui.cpp/.h             ← screens (home/sleep/recording + timer/pomodoro + ask)
       ├─ draw.cpp/.h           ← low-level e-paper framebuffer renderer
       ├─ buttons.cpp, record.cpp, rtc.h, ...
 ```
